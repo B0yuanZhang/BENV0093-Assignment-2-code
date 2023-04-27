@@ -112,7 +112,8 @@ ncfile
 
 
 
-#############################太阳辐射图#####################################
+###############################Solar radiance###############################
+
 library(ncdf4)
 era <- nc_open("C:/Users/Eric Zhang/Desktop/Spatial Analysis of Energy Data/Assignment 2/Spatial coursework/data1nc/data1.nc")
 
@@ -166,7 +167,9 @@ tmap_mode("view")
 
 tm_shape(ssrd_sf)+
   tm_dots(col="ssrd", style = "quantile", size=.001, palette = "YlOrRd")
-#################################太阳能图##################################
+
+
+#################################Solar power##############################
 
 
 ncatt_get(era,"ssrd","units")
@@ -185,7 +188,7 @@ tm_shape(ssrd_sf)+
   tm_dots(col="ssrd_kwh", style = "quantile", size=.001, palette = "GnBu")
 
 
-##################################插值步骤####################################
+###########################Interpolation steps############################
 
 library(gstat) #geostatistics used for interpolation. More details can be found [https://cran.r-project.org/web/packages/gstat/gstat.pdf] 
 #https://www.gstat.org/gstat.pdf see Section 2.3
@@ -215,7 +218,9 @@ st_bbox(indonesia)
 raster_template = rast( resolution = 0.05,
                         xmin=95.01079 , ymin=-11.00762  ,xmax=141.01940 , ymax=6.07693  ,  crs = st_crs(indonesia)$wkt)
 raster_template
-#########################插值结果########################################
+
+#########################Interpolation results##############################
+
 idw <- interpolate(raster_template, gs, debug.level=0) #interpolate is the function comes with terra
 plot(idw$var1.pred)
 
@@ -224,7 +229,7 @@ plot(idw_mask$var1.pred)
 
 names(idw_mask) = c( "predicted","observed" )
 
-#########################插值可视化#######################################
+#########################Interpolation visualisation#########################
 
 tmap_mode("view")
 
@@ -232,24 +237,23 @@ tm_shape(idw_mask$predicted) +
   tm_raster(col="predicted", style = "quantile", n = 10, palette= "YlOrRd", legend.show = TRUE)
 
 
-
-##########################protected /sensitive natural areas##############
+##########################Protected /sensitive natural areas################
 
 library(tmap)
 library(sf)
 
-# 设置tmap模式为view
+
 tmap_mode("view")
 
-# 读取保护区数据
+
 protected_areas <- st_read("C:/Users/Eric Zhang/Desktop/Spatial Analysis of Energy Data/Assignment 2/Spatial coursework/Protected planet.shp.gpkg")
 
-# 将保护区数据绘制到交互式地图上
+
 tm_shape(protected_areas) +
   tm_polygons("lightseagreen", border.col = "lightseagreen") +
   tm_layout(legend.outside.position = "bottom", legend.outside = TRUE)
 
-###########################Road############################################
+####################################Road###################################
 
 library(tmap)
 library(sf)
@@ -265,29 +269,29 @@ road_map <- tm_shape(road) +
 
 
 
-###############################电网########################################
+###############################Grid power grid###############################
 
-#加载必要的库
+
 library(tmap)
 library(sf)
 
-#读取电网数据
+
 grid <- st_read("C:/Users/Eric Zhang/Desktop/Spatial Analysis of Energy Data/Assignment 2/Spatial coursework/grid.geojson")
 
-#将电网数据投影为WGS84投影
+
 grid <- st_transform(grid, crs = "+proj=longlat +datum=WGS84")
 
-#绘制交互式tmap
+
 tm_shape(grid) +
   tm_lines(lwd = 1, col = "royalblue") +
   tm_layout(title = "Indonesia Power Grid Map")
 
 
-###############################合并########################################
+###############################Combination###################################
 
 library(tmap)
 
-# 创建四张图层
+
 layer1 <- tm_shape(ssrd_sf) +
   tm_dots(col="ssrd", style = "quantile", size=.001, palette = "YlOrRd")
 
@@ -311,15 +315,15 @@ tm <- layer1 + layer2 + layer3 + layer4 + layer5
 tmap_mode("view")
 
 tm
-##################################标记地点##################################
-# 创建 sf 对象
+##################################Plot region###############################
+
 points_df <- data.frame(
   lon = c(109.189265, 97.209179, 115.780299, 118.820757, 110.573124),
   lat = c(0.084836, 5.104261, -3.624469, -3.137592, -6.871590)
 )
 points_sf <- st_as_sf(points_df, coords = c("lon", "lat"), crs = 4326)
 
-# 添加标记
+
 tm <- tm_shape(ssrd_sf) +
   tm_dots(col="ssrd", style = "quantile", size=.001, palette = "YlOrRd") +
   tm_shape(protected_areas) +
@@ -339,22 +343,13 @@ tm <- tm_shape(ssrd_sf) +
 tmap_mode("view")
 tm
 
-
-library(tmaptools)
-library(tmap)
-library(Rcpp)
-library(leaflet)
-
-
-
 #################################AHP#######################################
 
 
-# 安装和加载AHPhybrid包
+
 install.packages("AHPhybrid")
 library(AHPhybrid)
 
-# 构建判断矩阵
 judgment.matrix <- matrix(c(
   0.48, 0.24, 0.12, 0.16,
   0.52, 0.26, 0.09, 0.13,
@@ -362,7 +357,7 @@ judgment.matrix <- matrix(c(
   0.375, 0.25, 0.25, 0.125
 ), nrow = 4)
 
-# 检查判断矩阵是否符合要求
+
 if (!is.matrix(judgment.matrix) || nrow(judgment.matrix) != ncol(judgment.matrix)) {
   stop("The judgment matrix is not a square matrix.")
 }
@@ -376,15 +371,15 @@ if (any(colSums(judgment.matrix) != 1)) {
 
 normalized.matrix <- normalize.judgment.matrix(judgment.matrix, byrow = FALSE)
 
-# 定义权重向量
+
 weights <- matrix(0, nrow = ncol(normalized.matrix), ncol = 1)
 new_weights <- c(0.4658194, 0.2771405, 0.0959699, 0.1610702)
-# 计算权重向量
+
 weights[,1] <- colMeans(normalized.matrix)
 
-# 输出结果
+
 print(weights)
-##########################################################################
+##################################Plot AHP#################################
 
 
 library(ggplot2)
@@ -396,11 +391,11 @@ judgment.matrix <- matrix(c(
   1/3, 1/2, 1/2, 1
 ), nrow = 4)
 
-# 将权重向量转换为数据框
+
 df <- data.frame(criteria = c("Criterion 1", "Criterion 2", "Criterion 3", "Criterion 4"),
                  weight = weights[, 1])
 
-# 绘制条形图
+
 ggplot(df, aes(x = criteria, y = weight)) + 
   geom_bar(stat = "identity") +
   ggtitle("Criteria Weights") +
@@ -408,11 +403,11 @@ ggplot(df, aes(x = criteria, y = weight)) +
   ylab("Weight") +
   theme_bw()
 
-# 将新权重向量转换为数据框
+
 df_new <- data.frame(criteria = c("Solar radiation", "Protected /sensitive natural areas", "Road networks", "Grid line"),
                      weight = new_weights)
 
-# 绘制条形图
+
 ggplot(df_new, aes(x = criteria, y = weight)) + 
   geom_bar(stat = "identity") +
   ggtitle("Criteria Weights") +
@@ -420,7 +415,7 @@ ggplot(df_new, aes(x = criteria, y = weight)) +
   ylab("Weight") +
   theme_bw()
 
-##############################ADP正式########################################
+##############################AHP normal#####################################
 
 judgment.matrix <- matrix(c(
   1, 2, 4, 3,
@@ -429,16 +424,16 @@ judgment.matrix <- matrix(c(
   1/3, 1/2, 2, 1
 ), nrow = 4)
 
-# 计算每个标准的权重向量
+
 normalized.matrix <- judgment.matrix / rowSums(judgment.matrix)
 
-# 计算每个标准的权重
+
 weights <- colMeans(normalized.matrix)
 
-# 打印每个标准的权重
+
 weights
 
-# 一致性检验
+
 n <- nrow(judgment.matrix)
 ri.values <- c(0, 0, 0.58, 0.9, 1.12, 1.24, 1.32, 1.41, 1.45, 1.49)
 lambda.max <- Re(eigen(judgment.matrix)$values[1])
@@ -456,9 +451,9 @@ judgment.matrix
 ######################################NPV#################################
 
 calc_NPV <- function(annual_revenue, i=0.05, lifetime_yrs, CAPEX, OPEX=0){
-  costs_op <- rep(OPEX, lifetime_yrs) #operating cost
+  costs_op <- rep(OPEX, lifetime_yrs) 
   revenue <- rep(annual_revenue, lifetime_yrs) 
-  t <- seq(1, lifetime_yrs, 1) #output: 1, 2, 3, ...25
+  t <- seq(1, lifetime_yrs, 1)
   
   NPV <- sum( (revenue - costs_op)/(1 + i)**t ) - CAPEX
   return(round(NPV, 0))
@@ -479,7 +474,7 @@ LCOE <- function(NPV,Life_span_generation){
   return(round(lcoe,2))
 }
 
-annual= 33000000 #kwh
+annual= 33000000 
 lsg = Life_span_generation_kWH(yearly_generation_kWH=annual)
 lsg
 
